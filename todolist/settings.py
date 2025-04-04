@@ -128,6 +128,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite default port
-    "https://your-frontend-app.onrender.com",  # Add your live frontend URL
+    "https://etodo-app.onrender.com",  # Add your live frontend URL
 ]
 CORS_ALLOW_ALL_ORIGINS = True
