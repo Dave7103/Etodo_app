@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-fl7-uvdj8p(xr4f+mnc81jz*8db(hprz$80*)^j3gpr$7!svp_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['etodo-app.onrender.com']
 
 
 # Application definition
