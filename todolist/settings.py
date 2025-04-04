@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import dj_database_url
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-fl7-uvdj8p(xr4f+mnc81jz*8db(hprz$80*)^j3gpr$7!svp_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -83,6 +85,8 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+DATABASES["default"] = dj_database_url.parse("postgresql://etodo_app_django_render_user:GBRKuq6R9p4dS3JSFZHpO318Qq54RtJ5@dpg-cvnq46p5pdvs73fqtr3g-a.singapore-postgres.render.com/etodo_app_django_render")
 
 
 # Password validation
