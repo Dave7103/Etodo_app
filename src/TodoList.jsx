@@ -1,83 +1,164 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+
+const API_URL = "https://etodo-app.onrender.com/api/post/";
 
 export default function TodoList() {
-    const [tasks, setTasks] = useState([]);
-    const [task, setTask] = useState("");
-    const [filter, setFilter] = useState("all");
-    const [editingIndex, setEditingIndex] = useState(null);
-    const [editText, setEditText] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [task, setTask] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [filter, setFilter] = useState("All");
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("theme") === "dark");
 
-    const addTask = () => {
-        if (task.trim() === "") return;
-        setTasks([...tasks, { text: task, completed: false }]);
-        setTask("");
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(API_URL);
+        setTasks(response.data);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
     };
+    fetchTasks();
+  }, []);
 
-    const toggleComplete = (index) => {
-        const newTasks = [...tasks];
-        newTasks[index].completed = !newTasks[index].completed;
-        setTasks(newTasks);
-    };
+  useEffect(() => {
+    if (darkMode) {
+        document.body.classList.add("dark-mode");
+      } else {
+        document.body.classList.remove("dark-mode");
+      }
 
-    const startEditing = (index) => {
-        setEditingIndex(index);
-        setEditText(tasks[index].text);
-    };
+      localStorage.setItem("theme", darkMode ? "dark" : "light");
+}, [darkMode]);
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
-    const saveTask = (index) => {
-        const newTasks = [...tasks];
-        newTasks[index].text = editText;
-        setTasks(newTasks);
-        setEditingIndex(null);
-    };
+  const addTask = async () => {
+    if (task.trim() === "") return;
+    try {
+      const newTask = { title: task, completed: false };
+      const response = await axios.post(API_URL, newTask);
+      setTasks([...tasks, response.data]);
+      setTask("");
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
+  };
 
-    const deleteTask = (index) => {
-        const newTasks = tasks.filter((_, i) => i !== index);
-        setTasks(newTasks);
-    };
+  const removeTask = async (id) => {
+    try {
+      await axios.delete(`${API_URL}${id}/`);
+      setTasks(tasks.filter((task) => task.id !== id));
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
 
-    const filteredTasks = tasks.filter((t) =>
-        filter === "all" ? true : filter === "completed" ? t.completed : !t.completed
-    );
+  const editTask = (id) => {
+    const taskToEdit = tasks.find((task) => task.id === id);
+    if (taskToEdit) {
+      setEditingId(id);
+      setEditText(taskToEdit.title);
+    }
+  };
 
-    return (
-        <div className="todo-container">
+  const handleSave = async () => {
+    if (editText.trim() === "") return;
+    try {
+      const updatedTask = { title: editText };
+      await axios.patch(`${API_URL}${editingId}/`, updatedTask);
+      setTasks(
+        tasks.map((task) =>
+          task.id === editingId ? { ...task, title: editText } : task
+        )
+      );
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  };
+
+  const toggleCompletion = async (id) => {
+    const taskToToggle = tasks.find((task) => task.id === id);
+    if (taskToToggle) {
+      try {
+        const updatedTask = { completed: !taskToToggle.completed };
+        await axios.patch(`${API_URL}${id}/`, updatedTask);
+        setTasks(
+          tasks.map((task) =>
+            task.id === id ? { ...task, completed: !task.completed } : task
+          )
+        );
+      } catch (error) {
+        console.error("Error toggling task completion:", error);
+      }
+    }
+  };
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "Completed") return task.completed;
+    if (filter === "Pending") return !task.completed;
+    return true;
+  });
+
+  return (
+    <div className="app">
+      <div className="header">
+        <h2>To-Do List</h2>
+        <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+          {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
+      </div>
+
+      <div className="task-input">
+        <input
+          type="text"
+          placeholder="Add a new task..."
+          value={task}
+          onChange={(e) => setTask(e.target.value)}
+        />
+        <button onClick={addTask}>Add Task</button>
+      </div>
+
+      <div className="filter-buttons">
+        <button onClick={() => setFilter("All")}>All</button>
+        <button onClick={() => setFilter("Completed")}>Completed</button>
+        <button onClick={() => setFilter("Pending")}>Pending</button>
+      </div>
+
+      <ul className="task-list">
+        {filteredTasks.map((task) => (
+          <li key={task.id} className={`task-item ${task.completed ? "completed" : ""}`}>
             <input
-                type="text"
-                placeholder="Add a new task..."
-                value={task}
-                onChange={(e) => setTask(e.target.value)}
+              type="checkbox"
+              checked={task.completed}
+              onChange={() => toggleCompletion(task.id)}
             />
-            <button onClick={addTask}>Add Task</button>
-            <div>
-                <button onClick={() => setFilter("all")}>All</button>
-                <button onClick={() => setFilter("completed")}>Completed</button>
-                <button onClick={() => setFilter("pending")}>Pending</button>
-            </div>
-            <ul>
-                {filteredTasks.map((t, index) => (
-                    <li key={index} className={t.completed ? "completed" : ""}>
-                        <input type="checkbox" checked={t.completed} onChange={() => toggleComplete(index)} />
-                        {editingIndex === index ? (
-                            <>
-                                <input
-                                    type="text"
-                                    value={editText}
-                                    onChange={(e) => setEditText(e.target.value)}
-                                />
-                                <button onClick={() => saveTask(index)}>Save</button>
-                                <button onClick={() => setEditingIndex(null)}>Cancel</button>
-                            </>
-                        ) : (
-                            <>
-                                <span>{t.text}</span>
-                                <button onClick={() => startEditing(index)}>Edit</button>
-                                <button onClick={() => deleteTask(index)}>Delete</button>
-                            </>
-                        )}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
+            {editingId === task.id ? (
+              <>
+                <input
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  autoFocus
+                />
+                <button onClick={handleSave}>Save</button>
+                <button onClick={() => setEditingId(null)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <span>{task.title}</span>
+                <button onClick={() => editTask(task.id)}>Edit</button>
+                <button onClick={() => removeTask(task.id)}>Delete</button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
